@@ -1,2 +1,4 @@
 # Location_Finder
-This app returns the formatted address, address components and location on the map for each address entered by a user
+Returns the formatted address, location on the map, longitude and latitude for each address entered by a user.
+
+This is accomplished using Google Places, Google Map and Geocoding APIs
