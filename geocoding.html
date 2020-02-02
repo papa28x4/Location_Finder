@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
+    <!--  <link href="css/style.css?v=<?php echo time(); ?>" rel="stylesheet" type="text/css" /> -->
+   
+
+	<title>Geocoding</title>
+	<style type="text/css">
+		#mylist::first-letter {
+		  font-weight: bold;
+		  color: red;
+		  text-transform: uppercase;
+		}
+		.container{
+			border: 2px solid #6610f2;
+			border-radius: 10px;
+			box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+		}
+		#map{
+			width:100%;
+			height: 400px;
+		}
+		.h2{
+			color:#6f42c1;
+		}
+		#submit.pri_btn{
+			background-color: #6f42c1;
+		}
+	</style>
+</head>
+<body id="body">
+	<div class="container mt-3">
+		<h2 class="text-center mt-2 h2">Location Finder </h2>
+		<form id="location-form">
+			<input type="search" id="location" class="form-control form-control-lg mb-2">
+			<button type="submit" id="submit" class="btn btn-block pri_btn">Go</button>
+		</form>
+		<div class="card mt-4 mb-2" id="formatted-address"></div>
+		<div class="card my-2" id="geometry"></div>
+		<div id="map"></div>
+		<div class="card my-2" id="address-components"></div>
+	</div>
+	
+
+
+
+	<script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+	        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+	        crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+	        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+	        crossorigin="anonymous"></script>
+	 
+	<script type="text/javascript">
+
+
+		const locationInput = document.querySelector('#location');
+		const form =  document.querySelector('#location-form');
+		const mapHolder = document.querySelector('#map');
+		let getMyLocation = true;		
+
+		form.addEventListener('submit', geocode);
+
+		// Initialize and add the map
+		function initMap(lng, lat) {
+		  
+		  // var lagos = {lng:  6.5244, lat: 3.3792};
+		  lat = lat || 9.0765; 
+		  lng = lng || 7.3986; 
+		  let location = {lat, lng};
+		  // The map, centered at Uluru
+		  var map = new google.maps.Map(mapHolder, {zoom: 8, center: location});
+		  // The marker, positioned at Uluru
+		  var marker = new google.maps.Marker({position: location, map: map});
+
+		  infoWindow = new google.maps.InfoWindow;
+
+	        // Try HTML5 geolocation.
+		    if(getMyLocation){
+	          if (navigator.geolocation) {
+		          getMyLocation = false;	
+		          navigator.geolocation.getCurrentPosition(function(position) {
+		            var pos = {
+		              lat: position.coords.latitude,
+		              lng: position.coords.longitude
+		            };
+
+		            infoWindow.setPosition(pos);
+		            infoWindow.setContent('Location found.');
+		            infoWindow.open(map);
+		            map.setCenter(pos);
+		          }, function() {
+		            handleLocationError(true, infoWindow, map.getCenter());
+	          		});
+		        } else {
+		          // Browser doesn't support Geolocation
+		          handleLocationError(false, infoWindow, map.getCenter());
+		        }
+	        }
+		}
+
+		function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+	        infoWindow.setPosition(pos);
+	        infoWindow.setContent(browserHasGeolocation ?
+	                              'Error: The Geolocation service failed.' :
+	                              'Error: Your browser doesn\'t support geolocation.');
+	        infoWindow.open(map);
+       }
+   
+		function activatePlacesSearch(){
+			const locationInput = document.querySelector('#location');
+			let auto = new google.maps.places.Autocomplete(locationInput);
+			
+		}
+
+
+		function geocode(){
+			event.preventDefault();
+			let apiKey = `AIzaSyCjo7pjQZM3FVCjBpw1-5Yeddhl32ys6_o`;
+			let endpoint = `https://maps.googleapis.com/maps/api/geocode/json`;
+			// let location = '1600+Amphitheatre+Parkway,+Mountain+View,+CA';
+			let location = locationInput.value;
+			let data = {address: location,
+						key: apiKey}
+
+			let url = `${endpoint}?address=${location}&key=${apiKey}`
+			
+
+
+			console.log(url)
+			fetch(url)
+			.then(response => response.json())
+			.then(json => {
+				let formattedAddress = json.results[0].formatted_address;
+				let formattedAddOutput = `
+				<ul class="list-group">
+					<li class="list-group-item">${formattedAddress}</li>
+				</ul>`;
+
+				let formatted = document.querySelector('#formatted-address');
+				formatted.innerHTML = formattedAddOutput;
+
+				//Address Components
+				console.log(json.results[0])
+				let addressComponents = json.results[0].address_components;
+				addressComponentsOutput = `<ul class="list-group">`;
+				addressComponents.forEach(comp => {
+					addressComponentsOutput += `<li id="mylist" class="list-group-item"><b>${comp.types[0]}</b>: ${comp.long_name}</li>`
+				})
+				addressComponentsOutput += `</ul>`;
+				
+				let comps = document.querySelector('#address-components');
+				comps.innerHTML = addressComponentsOutput;
+				
+
+				//Geometry
+
+				let latlon = json.results[0].geometry.location;
+				let latlonHTML = `
+				<ul class="list-group">
+					<li class="list-group-item"><b>Longitude:</b> ${latlon.lng}&#176 &nbsp<b>Latitude:</b> ${latlon.lat}&#176</li>
+				</ul>`;
+				initMap(latlon.lng, latlon.lat)
+				let geometry = document.querySelector('#geometry');
+				geometry.innerHTML = latlonHTML;
+
+
+			})
+			.catch(err => console.log(err));
+		}
+
+		// geocode();
+	</script>
+	
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjo7pjQZM3FVCjBpw1-5Yeddhl32ys6_o&callback=initMap&libraries=places&callback=activatePlacesSearch">
+    </script>
+    
+</body>
+</html>
