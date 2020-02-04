@@ -127,7 +127,6 @@
 			event.preventDefault();
 			let apiKey = `AIzaSyCjo7pjQZM3FVCjBpw1-5Yeddhl32ys6_o`;
 			let endpoint = `https://maps.googleapis.com/maps/api/geocode/json`;
-			// let location = '1600+Amphitheatre+Parkway,+Mountain+View,+CA';
 			let location = locationInput.value;
 			let data = {address: location,
 						key: apiKey}
@@ -178,7 +177,7 @@
 			.catch(err => console.log(err));
 		}
 
-		// geocode();
+		
 	</script>
 	
     <script async defer
