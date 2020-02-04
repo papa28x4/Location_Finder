@@ -33,13 +33,27 @@
 		#submit.pri_btn{
 			background-color: #6f42c1;
 		}
+		.selcls { 
+		    padding: 9px; 
+		    border: solid 1px #517B97; 
+		    outline: 0; 
+		    background: -webkit-gradient(linear, left top, left 25, from(#FFFFFF), color-stop(4%, #CAD9E3), to(#FFFFFF)); 
+		    background: -moz-linear-gradient(top, #FFFFFF, #CAD9E3 1px, #FFFFFF 25px); 
+		    box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px; 
+		    -moz-box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px; 
+		    -webkit-box-shadow: rgba(0,0,0, 0.1) 0px 0px 8px; 
+	    } 
 	</style>
 </head>
 <body id="body">
 	<div class="container mt-3">
 		<h2 class="text-center mt-2 h2">Location Finder </h2>
 		<form id="location-form">
-			<input type="search" id="location" class="form-control form-control-lg mb-2">
+			<input type="search" id="location" class="form-control form-control-lg mb-2" placeholder="Enter a location">
+			<select class="form-control selcls mb-2" id="options">
+				<Option value="mine">Your Location</option>
+				<Option value="others" selected>Other Locations</option>
+			</select>
 			<button type="submit" id="submit" class="btn btn-block pri_btn">Go</button>
 		</form>
 		<div class="card mt-4 mb-2" id="formatted-address"></div>
@@ -66,46 +80,64 @@
 		const locationInput = document.querySelector('#location');
 		const form =  document.querySelector('#location-form');
 		const mapHolder = document.querySelector('#map');
-		let getMyLocation = true;		
+		const options = document.querySelector('#options')
+		let formatted = document.querySelector('#formatted-address');
+		let comps = document.querySelector('#address-components');
+		let geometry = document.querySelector('#geometry');
+		let storeLat, storeLng;
 
 		form.addEventListener('submit', geocode);
+		options.addEventListener('change', (e)=>{
+			console.log(e.target.value)
+			if(e.target.value === "mine"){
+				locationInput.disabled = true;
+				locationInput.placeholder = "";
+				initMap(storeLng, storeLat);
+			}else{
+				locationInput.disabled = false;
+				locationInput.placeholder="Enter a location"
+			}
+		})
 
 		// Initialize and add the map
-		function initMap(lng, lat) {
-		  
-		  // var lagos = {lng:  6.5244, lat: 3.3792};
-		  lat = lat || 9.0765; 
-		  lng = lng || 7.3986; 
+		function initMap(lng, lat, info) {
+
 		  let location = {lat, lng};
-		  // The map, centered at Uluru
+		  
 		  var map = new google.maps.Map(mapHolder, {zoom: 8, center: location});
-		  // The marker, positioned at Uluru
+		 
 		  var marker = new google.maps.Marker({position: location, map: map});
 
-		  infoWindow = new google.maps.InfoWindow;
+		  infoWindow = new google.maps.InfoWindow({content: `<h2>${info}</h2>`});
+		  marker.addListener('click', function(){
+		  	infoWindow.open(map, marker)
+		  })
 
-	        // Try HTML5 geolocation.
-		    if(getMyLocation){
+	        // HTML5 geolocation.
+		    if(options.value === 'mine'){
 	          if (navigator.geolocation) {
-		          getMyLocation = false;	
+		          
 		          navigator.geolocation.getCurrentPosition(function(position) {
 		            var pos = {
 		              lat: position.coords.latitude,
 		              lng: position.coords.longitude
 		            };
-
+		            console.log(pos)
+		            revGeocode(pos)
 		            infoWindow.setPosition(pos);
-		            infoWindow.setContent('Location found.');
+		            infoWindow.setContent('Your location found. Zoom in');
 		            infoWindow.open(map);
 		            map.setCenter(pos);
 		          }, function() {
 		            handleLocationError(true, infoWindow, map.getCenter());
 	          		});
-		        } else {
+		          locationInput.value = "";
+		       } else {
 		          // Browser doesn't support Geolocation
 		          handleLocationError(false, infoWindow, map.getCenter());
-		        }
-	        }
+		       }
+	        
+		    }
 		}
 
 		function handleLocationError(browserHasGeolocation, infoWindow, pos) {
@@ -122,12 +154,48 @@
 			
 		}
 
+		function revGeocode(pos){
+			let apiKey = `AIzaSyCjo7pjQZM3FVCjBpw1-5Yeddhl32ys6_o`;
+			let endpoint = `https://maps.googleapis.com/maps/api/geocode/json`;
+			let latlng = `${pos.lat},${pos.lng}`;
+			let url = `${endpoint}?latlng=${latlng}&key=${apiKey}`;
+			fetch(url)
+			.then(response => response.json())
+			.then(json => {
+				console.log(json);
+				console.log(json.plus_code.compound_code)
+
+				formatted.innerHTML = `<ul class="list-group">
+					<li class="list-group-item">${json.plus_code.compound_code}</li>
+				</ul>`;
+				let latlonHTML = `
+				<ul class="list-group">
+					<li class="list-group-item"><b>Longitude:</b>${pos.lng}&#176 &nbsp<b>Latitude:</b> ${pos.lat}&#176</li>
+				</ul>`;
+				storeLat = pos.lat;
+				storeLng = pos.lng;
+				geometry.innerHTML = latlonHTML;
+				comps.innerHTML = '';
+				
+			})
+	
+		}
 
 		function geocode(){
 			event.preventDefault();
 			let apiKey = `AIzaSyCjo7pjQZM3FVCjBpw1-5Yeddhl32ys6_o`;
 			let endpoint = `https://maps.googleapis.com/maps/api/geocode/json`;
+			
 			let location = locationInput.value;
+			if(location.trim() === ''){
+				if(options.value === 'mine'){
+					initMap(storeLng, storeLat);
+				}else{
+					alert('Please enter a location');
+				}
+				
+				return;
+			}
 			let data = {address: location,
 						key: apiKey}
 
@@ -145,7 +213,6 @@
 					<li class="list-group-item">${formattedAddress}</li>
 				</ul>`;
 
-				let formatted = document.querySelector('#formatted-address');
 				formatted.innerHTML = formattedAddOutput;
 
 				//Address Components
@@ -156,20 +223,19 @@
 					addressComponentsOutput += `<li id="mylist" class="list-group-item"><b>${comp.types[0]}</b>: ${comp.long_name}</li>`
 				})
 				addressComponentsOutput += `</ul>`;
-				
-				let comps = document.querySelector('#address-components');
+
 				comps.innerHTML = addressComponentsOutput;
 				
 
 				//Geometry
-
 				let latlon = json.results[0].geometry.location;
 				let latlonHTML = `
 				<ul class="list-group">
 					<li class="list-group-item"><b>Longitude:</b> ${latlon.lng}&#176 &nbsp<b>Latitude:</b> ${latlon.lat}&#176</li>
 				</ul>`;
-				initMap(latlon.lng, latlon.lat)
-				let geometry = document.querySelector('#geometry');
+				initMap(latlon.lng, latlon.lat, formattedAddress);
+				storeLat = latlon.lat;
+				storeLng = latlon.lng;
 				geometry.innerHTML = latlonHTML;
 
 
@@ -183,6 +249,6 @@
     <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjo7pjQZM3FVCjBpw1-5Yeddhl32ys6_o&callback=initMap&libraries=places&callback=activatePlacesSearch">
     </script>
-    
+   
 </body>
 </html>
