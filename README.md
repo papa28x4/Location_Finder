@@ -4,4 +4,6 @@ Returns the formatted address, location on the map, longitude and latitude for e
 Accomplished using Google Places, Google Map and Geocoding APIs
 
 
+![alt text](https://i.ibb.co/Hdr4JPf/location-finder.png "Sneek Preview")
+
 ![alt text](https://i.ibb.co/nmyvz0T/location-finder-b.png "Sneek Preview")
