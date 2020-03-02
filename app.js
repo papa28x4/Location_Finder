@@ -81,14 +81,12 @@
 			let apiKey = `AIzaSyCjo7pjQZM3FVCjBpw1-5Yeddhl32ys6_o`;
 			let endpoint = `https://maps.googleapis.com/maps/api/geocode/json`;
 			let latlng = `${pos.lat},${pos.lng}`;
-			// let latlng = `6.5788616,3.2653896`
 			let url = `${endpoint}?latlng=${latlng}&key=${apiKey}`;
 			fetch(url)
 			.then(response => response.json())
 			.then(json => {
-				console.log(json);
-				console.log(json.plus_code.compound_code)
-				console.log(json.results[0].formatted_address)
+				// console.log(json);
+				
 				if (isMobile) {
 		  			formatted.innerHTML = `<ul class="list-group">
 									<li class="list-group-item">${json.results[0].formatted_address}</li>
